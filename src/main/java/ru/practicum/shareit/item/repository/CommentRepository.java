@@ -6,7 +6,6 @@ import ru.practicum.shareit.item.model.Comment;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -26,14 +25,6 @@ public class CommentRepository {
 
         commentStorage.put(newComment.getId(), comment);
         return newComment;
-    }
-
-    public Optional<Comment> findById(Long commentId) {
-        if (commentId == null) {
-            return Optional.empty();
-        }
-
-        return Optional.ofNullable(commentStorage.get(commentId));
     }
 
     public Collection<Comment> findAllByItemId(Long itemId) {

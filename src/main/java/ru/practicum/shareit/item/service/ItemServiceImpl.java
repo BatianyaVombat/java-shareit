@@ -100,7 +100,6 @@ public class ItemServiceImpl implements ItemService {
         Collection<Comment> itemComments = commentRepository.findAllByItemId(itemId);
 
         ItemDto dtoItem = ItemMapper.toResponse(item);
-        Collection<CommentDto> dtoComment = itemComments.stream().map(CommentMapper::toResponse).toList();
         dtoItem.setComments(itemComments.stream()
                 .map(CommentMapper::toResponse)
                 .collect(Collectors.toList()));
@@ -138,14 +137,5 @@ public class ItemServiceImpl implements ItemService {
         Comment comment = CommentMapper.toEntity(dto, item, user);
         Comment created = commentRepository.createComment(comment);
         return CommentMapper.toResponse(created);
-    }
-
-    @Override
-    public Collection<CommentDto> getCommentsByItemId(Long itemId) {
-        itemRep.findById(itemId).orElseThrow(() -> new NotFoundException("Вещь с id = " + itemId + " не найдена"));
-
-        return commentRepository.findAllByItemId(itemId).stream()
-                .map(CommentMapper::toResponse)
-                .collect(Collectors.toList());
     }
 }

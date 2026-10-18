@@ -1,7 +1,6 @@
 package ru.practicum.shareit.user;
 
 import lombok.experimental.UtilityClass;
-import ru.practicum.shareit.user.dto.UpdateUserRequest;
 import ru.practicum.shareit.user.dto.UserDto;
 
 @UtilityClass
@@ -19,14 +18,6 @@ public class UserMapper {
                 .id(userDto.getId())
                 .name(userDto.getName())
                 .email(userDto.getEmail())
-                .build();
-    }
-
-    public User toEntity(UpdateUserRequest request) {
-        return User.builder()
-                .id(request.getId())
-                .name(request.getName())
-                .email(request.getEmail())
                 .build();
     }
 }

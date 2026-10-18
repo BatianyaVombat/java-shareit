@@ -1,8 +1,9 @@
-package ru.practicum.shareit.item;
+package ru.practicum.shareit.item.repository;
 
 import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.exceptions.NotFoundException;
+import ru.practicum.shareit.item.model.Item;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;

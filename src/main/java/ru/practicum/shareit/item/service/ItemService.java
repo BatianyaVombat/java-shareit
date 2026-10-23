@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.BookingRepository;
-import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.enums.BookingStatus;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.item.dto.CommentDto;
@@ -50,7 +50,7 @@ public class ItemService {
         Item oldItem = itemRep.findById(id)
                 .orElseThrow(() -> new NotFoundException("Вещь с id = " + id + " не найдена"));
 
-        if (!oldItem.getOwner().getId().equals(userId)) {
+        if (oldItem.getOwner() == null || !oldItem.getOwner().getId().equals(userId)) {
             throw new NotFoundException("Вещь с id = " + id + " не найдена");
         }
 

@@ -7,8 +7,12 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.BookingRepository;
-import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.enums.BookingStatus;
 import ru.practicum.shareit.booking.dto.BookingDto;
+
+import static ru.practicum.shareit.booking.enums.StateFilterStatus.*;
+
+import ru.practicum.shareit.booking.enums.StateFilterStatus;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
@@ -119,20 +123,27 @@ public class BookingService {
 
     private Collection<Booking> stateFilter(Collection<Booking> bookings, String state) {
         LocalDateTime now = LocalDateTime.now();
-        String normalize = state == null ? "ALL" : state.toUpperCase();
 
-        return switch (normalize) {
-            case "ALL" -> bookings;
-            case "CURRENT" -> bookings.stream()
+        StateFilterStatus status = ALL;
+        if (state != null) {
+            try {
+                status = StateFilterStatus.valueOf(state.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new ValidationException("Неизвестный state " + state);
+            }
+        }
+
+        return switch (status) {
+            case ALL -> bookings;
+            case CURRENT -> bookings.stream()
                     .filter(b -> !b.getStart().isAfter(now) && !b.getEnd().isBefore(now))
                     .collect(Collectors.toList());
-            case "PAST" -> bookings.stream().filter(b -> b.getEnd().isBefore(now)).collect(Collectors.toList());
-            case "FUTURE" -> bookings.stream().filter(b -> b.getStart().isAfter(now)).collect(Collectors.toList());
-            case "WAITING" -> bookings.stream().filter(b -> b.getStatus().equals(BookingStatus.WAITING))
+            case PAST -> bookings.stream().filter(b -> b.getEnd().isBefore(now)).collect(Collectors.toList());
+            case FUTURE -> bookings.stream().filter(b -> b.getStart().isAfter(now)).collect(Collectors.toList());
+            case WAITING -> bookings.stream().filter(b -> b.getStatus().equals(BookingStatus.WAITING))
                     .collect(Collectors.toList());
-            case "REJECTED" -> bookings.stream().filter(b -> b.getStatus().equals(BookingStatus.REJECTED))
+            case REJECTED -> bookings.stream().filter(b -> b.getStatus().equals(BookingStatus.REJECTED))
                     .collect(Collectors.toList());
-            default -> throw new ValidationException("Неизвестный state");
         };
 
     }

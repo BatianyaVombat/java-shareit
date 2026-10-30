@@ -19,6 +19,7 @@ import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
@@ -35,10 +36,17 @@ public class ItemService {
     private final UserRepository userRep;
     private final BookingRepository bookingRep;
     private final CommentRepository commentRep;
+    private final ItemRequestRepository itemRequestRep;
 
+    @Transactional
     public ItemDto createItem(Long userId, ItemDto dto) {
         User owner = userRep.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
+
+        if (dto.getRequestId() != null && !itemRequestRep.existsById(dto.getRequestId())) {
+            throw new NotFoundException("Запрос с id = " + dto.getRequestId() + " не найден");
+        }
+
         Item newItem = ItemMapper.toEntity(dto);
 
         newItem.setOwner(owner);

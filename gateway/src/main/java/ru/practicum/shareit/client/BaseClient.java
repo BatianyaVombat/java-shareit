@@ -31,8 +31,8 @@ public class BaseClient {
         return makeAndSendRequest(HttpMethod.GET, path, userId, parameters, null);
     }
 
-    protected <T> ResponseEntity<Object> post(String path, T body) {
-        return post(path, null, null, body);
+    protected <T> ResponseEntity<Object> post(T body) {
+        return post("", null, null, body);
     }
 
     protected <T> ResponseEntity<Object> post(String path, long userId, T body) {

@@ -1,5 +1,6 @@
 package ru.practicum.shareit.exception;
 
+
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,7 +16,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidation(MethodArgumentNotValidException e) {
-        return Map.of("error", "Ошибка валидации на шлюзе");
+        return Map.of("error", "Ошибка валидации на шлюзе: проверьте входные данные");
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -30,3 +31,4 @@ public class GlobalExceptionHandler {
         return Map.of("error", e.getMessage());
     }
 }
+

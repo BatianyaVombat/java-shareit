@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.enums.BookingStatus;
@@ -161,5 +162,110 @@ class BookingServiceIntegrationTest {
 
         assertThatThrownBy(() -> bookingService.getBookingById(created.getId(), stranger.getId()))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    //----------Тестирование StateFilter----------
+    @Test
+    void shouldGetBookingsByBookerWithStateCurrent() {
+        Booking booking = Booking.builder()
+                .item(item)
+                .booker(booker)
+                .start(LocalDateTime.now().minusHours(1))
+                .end(LocalDateTime.now().plusHours(1))
+                .status(BookingStatus.APPROVED)
+                .build();
+        bookingRep.save(booking);
+
+        Collection<BookingDto> result = bookingService.getBookingsByBooker(booker.getId(), "CURRENT");
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldGetBookingsByBookerWithStatePast() {
+        Booking booking = Booking.builder()
+                .item(item)
+                .booker(booker)
+                .start(LocalDateTime.now().minusDays(2))
+                .end(LocalDateTime.now().minusDays(1))
+                .status(BookingStatus.APPROVED)
+                .build();
+        bookingRep.save(booking);
+
+        Collection<BookingDto> result = bookingService.getBookingsByBooker(booker.getId(), "PAST");
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldGetBookingsByBookerWithStateFuture() {
+        BookingDto dto = BookingDto.builder()
+                .itemId(item.getId())
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .build();
+        bookingService.createBooking(booker.getId(), dto);
+
+        Collection<BookingDto> result = bookingService.getBookingsByBooker(booker.getId(), "FUTURE");
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldGetBookingsByBookerWithStateWaiting() {
+        BookingDto dto = BookingDto.builder()
+                .itemId(item.getId())
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .build();
+        bookingService.createBooking(booker.getId(), dto); // статус WAITING по умолчанию
+
+        Collection<BookingDto> result = bookingService.getBookingsByBooker(booker.getId(), "WAITING");
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldGetBookingsByBookerWithStateRejected() {
+        BookingDto dto = BookingDto.builder()
+                .itemId(item.getId())
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .build();
+        BookingDto created = bookingService.createBooking(booker.getId(), dto);
+        bookingService.approvedBooking(owner.getId(), created.getId(), false); // Отклоняем
+
+        Collection<BookingDto> result = bookingService.getBookingsByBooker(booker.getId(), "REJECTED");
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldThrowWhenStateIsInvalid() {
+        assertThatThrownBy(() -> bookingService.getBookingsByBooker(booker.getId(), "INVALID_STATE"))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Неизвестный state");
+    }
+
+    //----------Валидация дат----------
+    @Test
+    void shouldThrowWhenStartIsInPast() {
+        BookingDto dto = BookingDto.builder()
+                .itemId(item.getId())
+                .start(LocalDateTime.now().minusDays(1)) // В прошлом
+                .end(LocalDateTime.now().plusDays(1))
+                .build();
+
+        assertThatThrownBy(() -> bookingService.createBooking(booker.getId(), dto))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("в прошлом");
+    }
+
+    @Test
+    void shouldThrowWhenEndIsBeforeStart() {
+        BookingDto dto = BookingDto.builder()
+                .itemId(item.getId())
+                .start(LocalDateTime.now().plusDays(2))
+                .end(LocalDateTime.now().plusDays(1)) // Конец раньше начала
+                .build();
+
+        assertThatThrownBy(() -> bookingService.createBooking(booker.getId(), dto))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("раньше даты окончания");
     }
 }

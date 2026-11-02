@@ -10,6 +10,7 @@ import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.enums.BookingStatus;
 import ru.practicum.shareit.exceptions.NotFoundException;
+import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.NewCommentRequest;
@@ -230,5 +231,44 @@ class ItemServiceIntegrationTest {
         assertThat(comment.getText()).isEqualTo("Отличная дрель, рекомендую!");
         assertThat(comment.getAuthorName()).isEqualTo("Арендатор");
         assertThat(comment.getCreated()).isNotNull();
+    }
+
+    @Test
+    void shouldThrowWhenUpdatingNotOwnedItem() {
+        // Создаем вещь для owner
+        ItemDto createDto = ItemDto.builder().name("Дрель").description("Мощная").available(true).build();
+        ItemDto created = itemService.createItem(owner.getId(), createDto);
+
+        // Создаем второго пользователя
+        User anotherUser = userRep.save(User.builder().name("Другой").email("other@mail.com").build());
+
+        var updateRequest = ru.practicum.shareit.item.dto.UpdateItemRequest.builder().name("Новая").build();
+
+        // Пытаемся обновить чужую вещь
+        assertThatThrownBy(() -> itemService.updateItem(created.getId(), anotherUser.getId(), updateRequest))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("не найдена");
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenSearchTextIsBlank() {
+        assertThat(itemService.findByNameContainingIgnoreCaseAndAvailableTrue("")).isEmpty();
+        assertThat(itemService.findByNameContainingIgnoreCaseAndAvailableTrue(null)).isEmpty();
+    }
+
+    @Test
+    void shouldThrowWhenCreatingCommentWithoutRental() {
+        // Создаем вещь
+        ItemDto itemDto = ItemDto.builder().name("Дрель").description("Мощная").available(true).build();
+        ItemDto item = itemService.createItem(owner.getId(), itemDto);
+
+        // Создаем пользователя, который НЕ брал вещь в аренду
+        User noRentalUser = userRep.save(User.builder().name("Без аренды").email("norental@mail.com").build());
+
+        NewCommentRequest request = new NewCommentRequest("Отличная вещь");
+
+        assertThatThrownBy(() -> itemService.createComment(noRentalUser.getId(), item.getId(), request))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("не брал вещь в аренду");
     }
 }
